@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import datetime
 import matplotlib
+import matplotlib.pyplot as plt
 matplotlib.use('TkAgg') # or any other backend that supports showing figures
 
 # Read the data
@@ -14,7 +15,6 @@ data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
 def predict_temp(data, idx, prev_temp, prev_switch, mem):
     if idx == len(data):
         return []
-
     # Get current temperature and switch
     curr_temp = data.loc[idx, 'temp']
     curr_switch = data.loc[idx, 'switch']
@@ -49,7 +49,7 @@ pred_data = pd.DataFrame({'time': [data.loc[0, 'time'] + datetime.timedelta(seco
 combined_data = pd.concat([data[['time', 'temp']], pred_data])
 
 # Plot the results
-import matplotlib.pyplot as plt
+
 
 
 # Open a file for writing
@@ -58,6 +58,7 @@ with open('output.csv', 'w') as f:
     for i, row in pred_data.iterrows():
         f.write(f"{row['time']},{row['temp']}\n")
 
+# Plot the results
 plt.plot(combined_data['time'], combined_data['temp'], color='blue')
 plt.plot(pred_data['time'], pred_data['temp'], color='green')
 plt.show()
