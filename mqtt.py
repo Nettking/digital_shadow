@@ -32,7 +32,7 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT,MQTT_TOPIC_SUB, MQTT
     print("Published message: " + message)
 
     # Start the MQTT client loop to process incoming messages
-    client.loop_forever()
+    #client.loop_forever()
 
 
 

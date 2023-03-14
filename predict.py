@@ -51,6 +51,13 @@ combined_data = pd.concat([data[['time', 'temp']], pred_data])
 # Plot the results
 import matplotlib.pyplot as plt
 
+
+# Open a file for writing
+with open('output.csv', 'w') as f:
+    f.write('time,temp\n')  # write header row
+    for i, row in pred_data.iterrows():
+        f.write(f"{row['time']},{row['temp']}\n")
+
 plt.plot(combined_data['time'], combined_data['temp'], color='blue')
 plt.plot(pred_data['time'], pred_data['temp'], color='green')
 plt.show()
