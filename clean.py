@@ -1,0 +1,10 @@
+import pandas as pd
+
+# read CSV file
+data = pd.read_csv('data.csv')
+
+# drop the first column
+data = data.drop(data.columns[2], axis=1)
+
+# save modified data to new CSV file
+data.to_csv('cleaned_data.csv', index=False)
