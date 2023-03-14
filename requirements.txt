@@ -3,3 +3,5 @@ numpy
 datetime
 matplotlib
 paho-mqtt
+scikit-learn
+tensorflow
