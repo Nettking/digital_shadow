@@ -12,10 +12,11 @@ temp_list = []
 
 host = '192.168.0.124'
 topic = 'CPS2021/tempoutput'
+topic_response = 'CPS2021/SwitchControl'
 port = 1883
 
 for i, row in data.iterrows():
     current_temp = row['temp']
     message = f'{{ "temperature": {{ "id": 1, "txt": "temperature", "t":{current_temp} }} }}'
-    establish_connection(host, port, topic, topic, message)
+    establish_connection(host, port, topic, topic_response, message)
     time.sleep(1)
