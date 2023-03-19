@@ -1,2 +1,4 @@
 *.pyc
 output.csv
+__pycache__/mqtt.cpython-310.pyc
+output.csv
