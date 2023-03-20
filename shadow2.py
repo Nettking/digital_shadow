@@ -2,20 +2,65 @@ import pandas as pd
 import time
 import numpy as np
 from mqtt import *
+import paho.mqtt.client as mqtt
+
+switchState = False
+
+def on_message(client, userdata, message):
+    # Decode the message payload from bytes to string
+    payload = message.payload.decode()
+    global switchState
+    if payload == str('{"SwitchOff":{"did":1}}'):
+        print('Slår av...')
+        switchState = False
+    elif payload == str('{"SwitchOn":{"did":1}}'):
+        print('Slår på...')
+        switchState = True
+    else:
+        print('False message:', payload, "on topic:", message.topic)
+    
+    print('Received payload:', payload, "on topic:", message.topic)
+    
+    # Update the heating state based on the new switch state
+    global heating_state
+    heating_state = switchState
+
+# Function to establish a connection to the MQTT broker
+def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQTT_TOPIC_PUB, message="Hello, world!"):
+
+    # Set up the MQTT client and connect to the broker
+    client = mqtt.Client()
+    client.connect(MQTT_BROKER_ADDR, MQTT_BROKER_PORT)
+
+
+    # Subscribe to the specified topic with QoS level 1
+    client.subscribe(MQTT_TOPIC_SUB, qos=1)
+
+    # Set up the callback function for receiving messages
+    client.on_message = on_message
+
+    # Publish a message to the specified topic with the retain flag set to False and QoS level 1
+    client.publish(MQTT_TOPIC_PUB, message, retain=False, qos=1)
+    print("Published message: " + message)
+
+
+
+    return client
 
 host = '192.168.0.124'
-topic = 'CPS2021/tempoutput'
-topic_response = 'CPS2021/SwitchControl'
+topic_temp = 'CPS2021/tempoutput'
+topic_switch = 'CPS2021/SwitchControl'
 port = 1883
 
-# Establish a single connection to the MQTT broker
-client = establish_connection(host, port, topic_response, topic)
+client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
 
-# Initialize temperature and heating state
-current_temp = 20
-heating_state = False
+data = pd.read_csv('data.csv')
+data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
+temp_list = []
 
-# Define temperature change parameters
+current_temp = 19
+heating_state = False  
+
 heating_rate = 0.025
 cooling_rate = 0.025
 time_interval = 1
@@ -29,15 +74,11 @@ while True:
         current_temp -= cooling_rate * time_interval
 
     # Publish the current temperature
-    message = f'{{ "temperature": {{ "id": 1, "txt": "temperature", "t":{current_temp} }} }}'
-    client.publish(topic, message, retain=False, qos=1)
+    message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{current_temp}}}}}'
+    print(message)
+    client.publish(topic_temp, message)#, retain=False, qos=1)
     print("Published message: " + message)
 
-    # Clear the message by publishing an empty payload with retain=True
-    client.publish(topic, payload=None, retain=True)
-
     # Update heating_state based on switchState
-    heating_state = switchState
-
     client.loop(timeout=1.0)
     time.sleep(1)
