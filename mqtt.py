@@ -6,8 +6,8 @@ def on_message(client, userdata, message):
     # Decode the message payload from bytes to string
     payload = message.payload.decode()
     global switchState
+    
     if payload == '{"SwitchOff":{"did":1}}':
-        
         #print('Slår av...')
         switchState = False
     elif payload == '{"SwitchOn":{"did":1}}':
