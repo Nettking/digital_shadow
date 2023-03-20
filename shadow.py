@@ -16,16 +16,18 @@ port = 1883
 
 # Establish a single connection to the MQTT broker
 client = establish_connection(host, port, topic_response, topic)
-last_temp = 23.926145553588867
-current_temp = 23.929763793945312
-mem = [23.926145553588867]
+last_temp = 17.8
+current_temp = 17.9
+mem = [17.8]
 
 def predict_temp(curr_temp, prev_temp, mem):
 
     # Compute new temperature based on previous temperature and switch
     if switchState == True:
+        print("Switch On")
         new_temp = curr_temp + 0.1 * (20 - curr_temp) + 0.1 * (prev_temp - curr_temp)
     else:
+        print("Switch Off")
         new_temp = curr_temp - 0.1 * (curr_temp - mem[-1]) + 0.1 * (prev_temp - curr_temp)
 
     # Append new temperature to memory
