@@ -18,7 +18,7 @@ port = 1883
 client = establish_connection(host, port, topic_response, topic)
 last_temp = 17.8
 current_temp = 17.9
-mem = [17.8]
+mem = [17.8, 17.9]
 
 def predict_temp(curr_temp, prev_temp, mem):
 
