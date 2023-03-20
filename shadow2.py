@@ -20,6 +20,7 @@ port = 1883
 client = establish_connection(host, port, topic_response, topic)
 
 # Prepare the data for the linear regression model
+data['switch'] = data['switch'].replace({'ON': 1, 'OFF': 0})
 data['switch'] = data['switch'].astype(int)
 X = data[['switch', 'temp']]
 y = data['temp']
