@@ -65,18 +65,39 @@ temp_list = []
 current_temp = 20.5
 heating_state = False  
 
-heating_rate = 0.2
-cooling_rate = 0.2
+heating_rate = 0.025
+cooling_rate = 0.025
 time_interval = 1
+last_state = heating_state
 
 # Simulate the room temperature changes based on heating state
 num_iterations = 1591
+count = 0
+direction = 1
 for i in range(num_iterations):
     # Update the current_temp based on the heating_state
     if heating_state:
-        current_temp += heating_rate * time_interval
+        if last_state != heating_state:
+            current_temp = current_temp
+        else:
+            if count < 4:
+                count += 1
+                current_temp += direction * heating_rate * time_interval
+            else:
+                count = 0
+                direction = 1
+                current_temp += heating_rate * time_interval
     else:
-        current_temp -= cooling_rate * time_interval
+        if last_state != heating_state:
+            current_temp = current_temp    
+        else:
+            if count < 4:
+                count += 1
+                current_temp += direction * cooling_rate * time_interval
+            else:
+                count = 0
+                direction = -1
+                current_temp -= cooling_rate * time_interval
     current_temp = np.round(current_temp, 2)
     # Publish the current temperature
     message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{current_temp}}}}}'
@@ -90,6 +111,7 @@ for i in range(num_iterations):
 
     # Add current temperature to the list
     temp_list.append(current_temp)
+    last_state = heating_state
 
 # Plot the temperature over time
 time_list = np.arange(num_iterations)
