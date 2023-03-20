@@ -16,9 +16,9 @@ port = 1883
 
 # Establish a single connection to the MQTT broker
 client = establish_connection(host, port, topic_response, topic)
-last_temp = 20.5
-current_temp = 20.5
-mem = [20.5]
+last_temp = 23.926145553588867
+current_temp = 23.929763793945312
+mem = [23.926145553588867]
 
 def predict_temp(curr_temp, prev_temp, mem):
 
