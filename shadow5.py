@@ -77,7 +77,7 @@ transition_delay = 10
 transition_delay_counter = 0
 
 for i in range(num_iterations):
-    print(str(switchState + '&' + str(last_state)))
+    print(str(switchState) + '&' + str(last_state))
     if switchState != last_state:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
@@ -86,7 +86,9 @@ for i in range(num_iterations):
         else:
             transition_delay_counter = 0
             delay_counter = 0
+            last_state = switchState
     else:
+        last_state = switchState
         if switchState:
             if delay_counter < heating_delay:
                 current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
@@ -105,7 +107,7 @@ for i in range(num_iterations):
     
     # Add current temperature to the list
     temp_list.append(current_temp)
-    last_state = switchState
+    
 
     # Publish the current temperature
     message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{current_temp}}}}}'
