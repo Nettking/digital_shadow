@@ -73,12 +73,11 @@ direction = 1
 delay_counter = 0
 heating_delay = 4
 cooling_delay = 16
-last_heating_state = None
 transition_delay = 10
 transition_delay_counter = 0
 
 for i in range(num_iterations):
-    if switchState != last_heating_state:
+    if switchState != last_state:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
             current_temp = current_temp
@@ -114,7 +113,7 @@ for i in range(num_iterations):
 
     # Add current temperature to the list
     temp_list.append(current_temp)
-    last_heating_state = switchState
+    last_state = switchState
 
 # Plot the temperature over time
 time_list = np.arange(num_iterations)
