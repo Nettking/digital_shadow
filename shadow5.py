@@ -86,18 +86,19 @@ for i in range(num_iterations):
             transition_delay_counter = 0
             delay_counter = 0
 
-    if switchState:
-        if delay_counter < heating_delay:
-            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
-            delay_counter += 1
-        else:
-            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
     else:
-        if delay_counter < cooling_delay:
-            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
-            delay_counter += 1
+        if switchState:
+            if delay_counter < heating_delay:
+                current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
+                delay_counter += 1
+            else:
+                current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
         else:
-            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
+            if delay_counter < cooling_delay:
+                current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
+                delay_counter += 1
+            else:
+                current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
 
 
     current_temp = np.round(current_temp, 2)
