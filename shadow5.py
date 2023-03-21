@@ -92,21 +92,21 @@ for i in range(num_iterations):
         if switchState:
             if delay_counter < heating_delay:
                 current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
-                delay_counter += 1
                 if(delay_counter == heating_delay-1):
                     shouldDelayTransition = True
                 else:
                     shouldDelayTransition = False
+                delay_counter += 1
             else:
                 current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
         else:
             if delay_counter < cooling_delay:
                 current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
-                delay_counter += 1
                 if(delay_counter == cooling_delay-1):
                     shouldDelayTransition = True
                 else:
                     shouldDelayTransition = False
+                delay_counter += 1
             else:
                 current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
 
