@@ -80,7 +80,7 @@ for i in range(num_iterations):
         if last_state != heating_state:
             current_temp = current_temp
         else:
-            if count < 4:
+            if count < 2:
                 count += 1
                 current_temp += direction * heating_rate * time_interval
             else:
@@ -91,7 +91,7 @@ for i in range(num_iterations):
         if last_state != heating_state:
             current_temp = current_temp    
         else:
-            if count < 4:
+            if count < 8:
                 count += 1
                 current_temp += direction * cooling_rate * time_interval
             else:
