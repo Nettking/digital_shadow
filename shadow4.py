@@ -69,6 +69,7 @@ heating_rate = 0.025
 cooling_rate = 0.025
 time_interval = 1
 last_state = heating_state
+delay = False
 
 # Simulate the room temperature changes based on heating state
 num_iterations = 1591
@@ -76,10 +77,8 @@ count = 0
 direction = 1
 for i in range(num_iterations):
     # Update the current_temp based on the heating_state
-    if heating_state:
-        if last_state != heating_state:
-            current_temp = current_temp
-        else:
+    if delay:
+        if heating_state == False:
             if count < 4:
                 count += 1
                 current_temp += direction * heating_rate * time_interval
@@ -87,9 +86,7 @@ for i in range(num_iterations):
                 count = 0
                 direction = 1
                 current_temp += heating_rate * time_interval
-    else:
-        if last_state != heating_state:
-            current_temp = current_temp    
+                delay = False
         else:
             if count < 4:
                 count += 1
@@ -98,6 +95,34 @@ for i in range(num_iterations):
                 count = 0
                 direction = -1
                 current_temp -= cooling_rate * time_interval
+                delay = False
+        
+    else:
+        if heating_state:
+            if last_state != heating_state:
+                current_temp = current_temp
+                delay = True
+            else:
+                if count < 4:
+                    count += 1
+                    current_temp += direction * heating_rate * time_interval
+                else:
+                    count = 0
+                    direction = 1
+                    current_temp += heating_rate * time_interval
+        else:
+            if last_state != heating_state:
+                current_temp = current_temp
+                delay = True   
+            else:
+                if count < 4:
+                    count += 1
+                    current_temp += direction * cooling_rate * time_interval
+                else:
+                    count = 0
+                    direction = -1
+                    current_temp -= cooling_rate * time_interval
+
     current_temp = np.round(current_temp, 2)
     # Publish the current temperature
     message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{current_temp}}}}}'
