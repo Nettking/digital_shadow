@@ -58,7 +58,7 @@ port = 1883
 
 client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
 
-data = pd.read_csv('output_data.csv')
+data = pd.read_csv('data.csv')
 data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
 temp_list = []
 
@@ -66,47 +66,43 @@ current_temp = 20.5
 heating_state = False  
 
 heating_rate = 0.025
-cooling_rate = 0.02
-5
-max_heating_count = 4
-max_cooling_count = 4
+cooling_rate = 0.025
 time_interval = 1
 last_state = heating_state
+delay = False
+
+def update_temperature(current_temp, rate, time_interval, direction):
+    return current_temp + direction * rate * time_interval
 
 # Simulate the room temperature changes based on heating state
 num_iterations = 1591
 count = 0
-
-
 direction = 1
+delay_counter = 0
+heating_delay = 4
+cooling_delay = 16
+last_heating_state = None
+
 for i in range(num_iterations):
-    # Update the current_temp based on the heating_state
+    if heating_state != last_heating_state:
+        delay_counter = 0
+        last_heating_state = heating_state
+
     if heating_state:
-        if last_state != heating_state:
-            count -= 8
-            current_temp = current_temp
+        if delay_counter < heating_delay:
+            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
+            delay_counter += 1
         else:
-            if count < max_heating_count:
-                count += 1
-                current_temp += direction * heating_rate * time_interval
-            else:
-                count = 0
-                direction = 1
-                current_temp += heating_rate * time_interval
+            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
     else:
-        if last_state != heating_state:
-            count -= 2
-            current_temp = current_temp    
+        if delay_counter < cooling_delay:
+            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
+            delay_counter += 1
         else:
-            if count < max_cooling_count:
-                count += 1
-                current_temp += direction * cooling_rate * time_interval
-            else:
-                count = 0
-                direction = -1
-                current_temp -= cooling_rate * time_interval
+            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
+
+
     current_temp = np.round(current_temp, 2)
-    
     # Publish the current temperature
     message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{current_temp}}}}}'
     print(message)
@@ -129,7 +125,7 @@ plt.ylabel('Temperature')
 
 
 # Read the data
-data = pd.read_csv('output_data.csv')
+data = pd.read_csv('data.csv')
 
 # Convert time column to datetime object
 data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
@@ -171,8 +167,15 @@ pred_data = pd.DataFrame({'time': [data.loc[0, 'time'] + datetime.timedelta(seco
 # Combine original data and predicted data
 combined_data = pd.concat([data[['time', 'temp']], pred_data])
 
+# Plot the results
 
 
+
+# Open a file for writing
+with open('output.csv', 'w') as f:
+    f.write('time,temp\n')  # write header row
+    for i, row in pred_data.iterrows():
+        f.write(f"{row['time']},{row['temp']}\n")
 
 # Plot the results
 plt.plot(time_list, combined_data['temp'], color='blue')
