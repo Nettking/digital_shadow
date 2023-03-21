@@ -79,7 +79,7 @@ for i in range(num_iterations):
     # Update the current_temp based on the heating_state
     if delay:
         if heating_state == False:
-            if count < 4:
+            if count < 16:
                 count += 1
                 current_temp += direction * heating_rate * time_interval
             else:
