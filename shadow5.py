@@ -82,7 +82,6 @@ for i in range(num_iterations):
     if shouldDelayTransition:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
-            current_temp = current_temp
             transition_delay_counter += 1
         else:
             transition_delay_counter = 0
@@ -94,7 +93,7 @@ for i in range(num_iterations):
             if delay_counter < heating_delay:
                 current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
                 delay_counter += 1
-                if(delay_counter == heating_delay):
+                if(delay_counter == heating_delay-1):
                     shouldDelayTransition = True
                 else:
                     shouldDelayTransition = False
@@ -104,7 +103,7 @@ for i in range(num_iterations):
             if delay_counter < cooling_delay:
                 current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
                 delay_counter += 1
-                if(delay_counter == cooling_delay):
+                if(delay_counter == cooling_delay-1):
                     shouldDelayTransition = True
                 else:
                     shouldDelayTransition = False
