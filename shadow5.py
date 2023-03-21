@@ -79,7 +79,7 @@ shouldDelayTransition = False
 
 
 for i in range(num_iterations):
-    if switchState != last_state:
+    if shouldDelayTransition:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
             current_temp = current_temp
