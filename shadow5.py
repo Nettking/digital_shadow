@@ -78,11 +78,13 @@ transition_delay_counter = 0
 
 for i in range(num_iterations):
     if switchState != last_state:
+        print("my last state was different")
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
             current_temp = current_temp
             transition_delay_counter += 1
         else:
+            print("no more transition delay")
             transition_delay_counter = 0
             delay_counter = 0
 
