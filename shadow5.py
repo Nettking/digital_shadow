@@ -86,9 +86,11 @@ last_state = switchState
 offset = 0
 transition_delay = 10  # New variable to control the duration of transition delay
 transition_delay_counter = 0
+shouldDelayTransition = False
+
 
 for i in range(num_iterations):
-    if switchState != last_state:
+    if shouldDelayTransition:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
             current_temp = current_temp
@@ -96,18 +98,26 @@ for i in range(num_iterations):
         else:
             transition_delay_counter = 0
             delay_counter = 0
-            last_state = switchState
+            shouldDelayTransition = False
     else:
         if switchState:
             if delay_counter < heating_delay:
                 current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
                 delay_counter += 1
+                if(delay_counter == heating_delay):
+                    shouldDelayTransition = True
+                else:
+                    shouldDelayTransition = False
             else:
                 current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
         else:
             if delay_counter < cooling_delay:
                 current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
                 delay_counter += 1
+                if(delay_counter == cooling_delay):
+                    shouldDelayTransition = True
+                else:
+                    shouldDelayTransition = False
             else:
                 current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
 
