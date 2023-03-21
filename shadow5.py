@@ -56,8 +56,6 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQT
 
     return client
 
-
-
 client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
 
 data = pd.read_csv('output_data.csv')
