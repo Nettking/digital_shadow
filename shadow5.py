@@ -87,11 +87,12 @@ heating_delay = 4
 cooling_delay = 16
 last_heating_state = None
 offset = 0
-tansition_delay_counter = 0
+transition_delay = 10  # New variable to control the duration of transition delay
+transition_delay_counter = 0
 
 for i in range(num_iterations):
     if heating_state != last_heating_state:
-        delay_counter = 0
+        transition_delay_counter = 0  # Reset the transition delay counter
         last_heating_state = heating_state
 
     if heating_state:
@@ -107,6 +108,10 @@ for i in range(num_iterations):
         else:
             current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1, offset)
 
+    if transition_delay_counter < transition_delay:
+        transition_delay_counter += 1
+    else:
+        delay_counter = 0  # Reset delay_counter after transition delay is complete
 
     current_temp = np.round(current_temp, 2)
     # Publish the current temperature
