@@ -106,10 +106,12 @@ for i in range(num_iterations):
                 if count < 4:
                     count += 1
                     current_temp += direction * heating_rate * time_interval
+                    last_state = heating_state
                 else:
                     count = 0
                     direction = 1
                     current_temp += heating_rate * time_interval
+                    last_state = heating_state
         else:
             if last_state != heating_state:
                 current_temp = current_temp
@@ -118,10 +120,12 @@ for i in range(num_iterations):
                 if count < 4:
                     count += 1
                     current_temp += direction * cooling_rate * time_interval
+                    last_state = heating_state
                 else:
                     count = 0
                     direction = -1
                     current_temp -= cooling_rate * time_interval
+                    last_state = heating_state
 
     current_temp = np.round(current_temp, 2)
     # Publish the current temperature
