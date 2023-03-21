@@ -56,6 +56,8 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQT
 
     return client
 
+
+
 client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
 
 data = pd.read_csv('output_data.csv')
@@ -95,7 +97,6 @@ for i in range(num_iterations):
         else:
             transition_delay_counter = 0
             delay_counter = 0
-            last_heating_state = heating_state
 
     if heating_state:
         if delay_counter < heating_delay:
@@ -124,7 +125,7 @@ for i in range(num_iterations):
 
     # Add current temperature to the list
     temp_list.append(current_temp)
-    last_state = heating_state
+    last_heating_state = heating_state
 
 # Plot the temperature over time
 time_list = np.arange(num_iterations)
