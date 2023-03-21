@@ -1,13 +1,16 @@
-import pandas as pd
+import csv
 
-# read CSV file
-data = pd.read_csv('data.csv')
+input_file = 'input_data.csv'
+output_file = 'output_data.csv'
 
-# drop unnecessary columns
-data = data.drop(data.columns[0], axis=1)
-data = data.drop(data.columns[1], axis=1)
-data = data.drop(data.columns[1], axis=1)
-data = data.drop(data.columns[2], axis=1)
+# Specify which columns you want to remove by their indices
+columns_to_remove = [0, 2, 3, 4]  # Indices of RIGHT, LEFT, and ON/OFF columns
 
-# save modified data to new CSV file
-data.to_csv('cleaned_data.csv', index=False)
+with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+    reader = csv.reader(infile, delimiter=';')
+    writer = csv.writer(outfile, delimiter=';')
+    
+    for row in reader:
+        # Use a list comprehension to keep only the desired columns
+        filtered_row = [value for index, value in enumerate(row) if index not in columns_to_remove]
+        writer.writerow(filtered_row)
