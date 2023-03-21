@@ -11,6 +11,11 @@ import matplotlib
 matplotlib.use('TkAgg') # or any other backend that supports showing figures
 
 switchState = False
+host = '192.168.0.124'
+topic_temp = 'CPS2021/tempoutput'
+topic_switch = 'CPS2021/SwitchControl'
+port = 1883
+
 
 def on_message(client, userdata, message):
     # Decode the message payload from bytes to string
@@ -51,10 +56,7 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQT
 
     return client
 
-host = '192.168.0.124'
-topic_temp = 'CPS2021/tempoutput'
-topic_switch = 'CPS2021/SwitchControl'
-port = 1883
+
 
 client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
 
@@ -85,8 +87,6 @@ cooling_delay = 16
 last_heating_state = None
 transition_delay = 10
 transition_delay_counter = 0
-
-
 
 for i in range(num_iterations):
     if heating_state != last_heating_state:
