@@ -61,11 +61,11 @@ def update_temperature(current_temp, rate, time_interval, direction):
 
 # Simulate the room temperature changes based on heating state
 current_temp = 20.5
-switchState = False
 heating_rate = 0.025
 cooling_rate = 0.025
 time_interval = 1
-last_state = switchState
+switchState = False
+last_state = False
 delay = False
 num_iterations = 1591
 count = 0
@@ -74,17 +74,6 @@ delay_counter = 0
 heating_delay = 4
 cooling_delay = 16
 transition_delay = 10
-transition_delay_counter = 0
-
-num_iterations = 1591
-count = 0
-direction = 1
-delay_counter = 0
-heating_delay = 4
-cooling_delay = 16
-last_state = switchState
-offset = 0
-transition_delay = 10  # New variable to control the duration of transition delay
 transition_delay_counter = 0
 
 for i in range(num_iterations):
@@ -113,19 +102,24 @@ for i in range(num_iterations):
 
 
     current_temp = np.round(current_temp, 2)
+    
+    # Add current temperature to the list
+    temp_list.append(current_temp)
+    last_state = switchState
+
     # Publish the current temperature
     message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{current_temp}}}}}'
     print(message)
     client.publish(topic_temp, message)#, retain=False, qos=1)
     print("Published message: " + message)
 
+
+
     # Update heating_state based on switchState
     client.loop(timeout=0.01)
     time.sleep(0.1)
 
-    # Add current temperature to the list
-    temp_list.append(current_temp)
-    last_state = switchState
+
 
 # Plot the temperature over time
 time_list = np.arange(num_iterations)
