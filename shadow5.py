@@ -10,12 +10,14 @@ import matplotlib
 
 matplotlib.use('TkAgg') # or any other backend that supports showing figures
 
-switchState = False
+
 host = '192.168.0.124'
 topic_temp = 'CPS2021/tempoutput'
 topic_switch = 'CPS2021/SwitchControl'
 port = 1883
-
+data = pd.read_csv('output_data.csv')
+data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
+temp_list = []
 
 def on_message(client, userdata, message):
     # Decode the message payload from bytes to string
@@ -32,9 +34,6 @@ def on_message(client, userdata, message):
     
     print('Received payload:', payload, "on topic:", message.topic)
     
-    # Update the heating state based on the new switch state
-    global heating_state
-    heating_state = switchState
 
 # Function to establish a connection to the MQTT broker
 def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQTT_TOPIC_PUB, message="Hello, world!"):
@@ -42,7 +41,6 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQT
     # Set up the MQTT client and connect to the broker
     client = mqtt.Client()
     client.connect(MQTT_BROKER_ADDR, MQTT_BROKER_PORT)
-
 
     # Subscribe to the specified topic with QoS level 1
     client.subscribe(MQTT_TOPIC_SUB, qos=1)
@@ -56,28 +54,19 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQT
 
     return client
 
-
-
 client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
-
-data = pd.read_csv('output_data.csv')
-data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
-temp_list = []
-
-current_temp = 20.5
-heating_state = False  
-
-heating_rate = 0.025
-cooling_rate = 0.025
-time_interval = 1
-last_state = heating_state
-delay = False
 
 def update_temperature(current_temp, rate, time_interval, direction):
     return current_temp + direction * rate * time_interval
 
-
 # Simulate the room temperature changes based on heating state
+current_temp = 20.5
+switchState = False
+heating_rate = 0.025
+cooling_rate = 0.025
+time_interval = 1
+last_state = switchState
+delay = False
 num_iterations = 1591
 count = 0
 direction = 1
@@ -89,7 +78,7 @@ transition_delay = 10
 transition_delay_counter = 0
 
 for i in range(num_iterations):
-    if heating_state != last_heating_state:
+    if switchState != last_heating_state:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
             current_temp = current_temp
@@ -98,7 +87,7 @@ for i in range(num_iterations):
             transition_delay_counter = 0
             delay_counter = 0
 
-    if heating_state:
+    if switchState:
         if delay_counter < heating_delay:
             current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
             delay_counter += 1
@@ -125,7 +114,7 @@ for i in range(num_iterations):
 
     # Add current temperature to the list
     temp_list.append(current_temp)
-    last_heating_state = heating_state
+    last_heating_state = switchState
 
 # Plot the temperature over time
 time_list = np.arange(num_iterations)
@@ -133,12 +122,6 @@ plt.plot(time_list, temp_list)
 plt.xlabel('Time')
 plt.ylabel('Temperature')
 
-
-# Read the data
-data = pd.read_csv('output_data.csv')
-
-# Convert time column to datetime object
-data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
 
 # Define function to predict temperature recursively
 def predict_temp(data, idx, prev_temp, prev_switch, mem):
@@ -178,16 +161,6 @@ pred_data = pd.DataFrame({'time': [data.loc[0, 'time'] + datetime.timedelta(seco
 combined_data = pd.concat([data[['time', 'temp']], pred_data])
 
 # Plot the results
-
-
-
-
-# Plot the results
 plt.plot(time_list, combined_data['temp'], color='blue')
-
-
-
-
-
 plt.show()
 
