@@ -77,6 +77,7 @@ transition_delay = 10
 transition_delay_counter = 0
 
 for i in range(num_iterations):
+    print(str(switchState + '&' + str(last_state)))
     if switchState != last_state:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
@@ -85,7 +86,6 @@ for i in range(num_iterations):
         else:
             transition_delay_counter = 0
             delay_counter = 0
-            last_state = switchState
     else:
         if switchState:
             if delay_counter < heating_delay:
