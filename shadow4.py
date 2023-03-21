@@ -81,12 +81,19 @@ direction = 1
 delay_counter = 0
 heating_delay = 4
 cooling_delay = 16
+transition_delay = 4
+tansition_delay_counter = 0
 last_heating_state = None
 
 for i in range(num_iterations):
     if heating_state != last_heating_state:
-        delay_counter = 0
-        last_heating_state = heating_state
+        if delay_counter < transition_delay:
+            current_temp = current_temp
+            tansition_delay_counter += 1
+        else:
+            tansition_delay_counter = 0
+            delay_counter = 0
+            last_heating_state = heating_state
 
     if heating_state:
         if delay_counter < heating_delay:
