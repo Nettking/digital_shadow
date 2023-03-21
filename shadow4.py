@@ -83,6 +83,7 @@ for i in range(num_iterations):
     # Update the current_temp based on the heating_state
     if heating_state:
         if last_state != heating_state:
+            count -= 4
             current_temp = current_temp
         else:
             if count < max_heating_count:
@@ -94,6 +95,7 @@ for i in range(num_iterations):
                 current_temp += heating_rate * time_interval
     else:
         if last_state != heating_state:
+            
             current_temp = current_temp    
         else:
             if count < max_cooling_count:
@@ -169,15 +171,8 @@ pred_data = pd.DataFrame({'time': [data.loc[0, 'time'] + datetime.timedelta(seco
 # Combine original data and predicted data
 combined_data = pd.concat([data[['time', 'temp']], pred_data])
 
-# Plot the results
 
 
-
-# Open a file for writing
-with open('output_data.csv', 'w') as f:
-    f.write('time,temp\n')  # write header row
-    for i, row in pred_data.iterrows():
-        f.write(f"{row['time']},{row['temp']}\n")
 
 # Plot the results
 plt.plot(time_list, combined_data['temp'], color='blue')
