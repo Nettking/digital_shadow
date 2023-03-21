@@ -76,18 +76,27 @@ cooling_delay = 16
 transition_delay = 10
 transition_delay_counter = 0
 
+num_iterations = 1591
+count = 0
+direction = 1
+delay_counter = 0
+heating_delay = 4
+cooling_delay = 16
+last_state = switchState
+offset = 0
+transition_delay = 10  # New variable to control the duration of transition delay
+transition_delay_counter = 0
+
 for i in range(num_iterations):
     if switchState != last_state:
-        print("my last state was different")
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
             current_temp = current_temp
             transition_delay_counter += 1
         else:
-            print("no more transition delay")
             transition_delay_counter = 0
             delay_counter = 0
-
+            last_state = switchState
     else:
         if switchState:
             if delay_counter < heating_delay:
