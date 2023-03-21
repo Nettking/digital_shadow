@@ -58,7 +58,7 @@ port = 1883
 
 client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
 
-data = pd.read_csv('data.csv')
+data = pd.read_csv('output_data.csv')
 data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
 temp_list = []
 
@@ -66,13 +66,18 @@ current_temp = 20.5
 heating_state = False  
 
 heating_rate = 0.025
-cooling_rate = 0.025
+cooling_rate = 0.02
+5
+max_heating_count = 4
+max_cooling_count = 4
 time_interval = 1
 last_state = heating_state
 
 # Simulate the room temperature changes based on heating state
 num_iterations = 1591
 count = 0
+
+
 direction = 1
 for i in range(num_iterations):
     # Update the current_temp based on the heating_state
@@ -80,7 +85,7 @@ for i in range(num_iterations):
         if last_state != heating_state:
             current_temp = current_temp
         else:
-            if count < 2:
+            if count < max_heating_count:
                 count += 1
                 current_temp += direction * heating_rate * time_interval
             else:
@@ -91,7 +96,7 @@ for i in range(num_iterations):
         if last_state != heating_state:
             current_temp = current_temp    
         else:
-            if count < 8:
+            if count < max_cooling_count:
                 count += 1
                 current_temp += direction * cooling_rate * time_interval
             else:
@@ -99,6 +104,7 @@ for i in range(num_iterations):
                 direction = -1
                 current_temp -= cooling_rate * time_interval
     current_temp = np.round(current_temp, 2)
+    
     # Publish the current temperature
     message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{current_temp}}}}}'
     print(message)
@@ -121,7 +127,7 @@ plt.ylabel('Temperature')
 
 
 # Read the data
-data = pd.read_csv('data.csv')
+data = pd.read_csv('output_data.csv')
 
 # Convert time column to datetime object
 data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
@@ -168,7 +174,7 @@ combined_data = pd.concat([data[['time', 'temp']], pred_data])
 
 
 # Open a file for writing
-with open('output.csv', 'w') as f:
+with open('output_data.csv', 'w') as f:
     f.write('time,temp\n')  # write header row
     for i, row in pred_data.iterrows():
         f.write(f"{row['time']},{row['temp']}\n")
