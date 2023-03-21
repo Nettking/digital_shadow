@@ -74,9 +74,6 @@ delay = False
 def update_temperature(current_temp, rate, time_interval, direction):
     return current_temp + direction * rate * time_interval
 
-# Simulate the room temperature changes based on heating state
-def update_temperature(current_temp, rate, time_interval, direction, offset):
-    return current_temp + direction * rate * time_interval - offset
 
 # Simulate the room temperature changes based on heating state
 num_iterations = 1591
@@ -86,32 +83,35 @@ delay_counter = 0
 heating_delay = 4
 cooling_delay = 16
 last_heating_state = None
-offset = 0
-transition_delay = 10  # New variable to control the duration of transition delay
+transition_delay = 10
 transition_delay_counter = 0
+
+
 
 for i in range(num_iterations):
     if heating_state != last_heating_state:
-        transition_delay_counter = 0  # Reset the transition delay counter
-        last_heating_state = heating_state
+        if transition_delay_counter < transition_delay:
+            print('im in transition delay')
+            current_temp = current_temp
+            transition_delay_counter += 1
+        else:
+            transition_delay_counter = 0
+            delay_counter = 0
+            last_heating_state = heating_state
 
     if heating_state:
         if delay_counter < heating_delay:
-            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1, offset)
+            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
             delay_counter += 1
         else:
-            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1, offset)
+            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
     else:
         if delay_counter < cooling_delay:
-            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1, offset)
+            current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
             delay_counter += 1
         else:
-            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1, offset)
+            current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
 
-    if transition_delay_counter < transition_delay:
-        transition_delay_counter += 1
-    else:
-        delay_counter = 0  # Reset delay_counter after transition delay is complete
 
     current_temp = np.round(current_temp, 2)
     # Publish the current temperature
