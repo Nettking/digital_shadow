@@ -83,7 +83,7 @@ for i in range(num_iterations):
     # Update the current_temp based on the heating_state
     if heating_state:
         if last_state != heating_state:
-            count -= 4
+            count -= 8
             current_temp = current_temp
         else:
             if count < max_heating_count:
@@ -95,7 +95,7 @@ for i in range(num_iterations):
                 current_temp += heating_rate * time_interval
     else:
         if last_state != heating_state:
-            
+            count -= 2
             current_temp = current_temp    
         else:
             if count < max_cooling_count:
