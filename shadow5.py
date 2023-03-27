@@ -11,7 +11,7 @@ import matplotlib
 matplotlib.use('TkAgg') # or any other backend that supports showing figures
 
 
-host = '192.168.0.124'
+host = '10.0.0.77'
 topic_temp = 'CPS2021/tempoutput'
 topic_switch = 'CPS2021/SwitchControl'
 port = 1883
@@ -64,8 +64,8 @@ current_temp = 20.5
 heating_rate = 0.025
 cooling_rate = 0.025
 time_interval = 1
-switchState = False
-last_state = False
+switchState = True
+last_state = True
 delay = False
 num_iterations = 1591
 count = 0
@@ -73,41 +73,53 @@ direction = 1
 delay_counter = 0
 heating_delay = 4
 cooling_delay = 16
-transition_delay = 10
+transition_delay = 4
 transition_delay_counter = 0
-shouldDelayTransition = False
+delay_with_no_temp_change = False
+delay_with_temp_change = False
 
 
 for i in range(num_iterations):
-    if shouldDelayTransition:
+    if delay_with_no_temp_change:
         if transition_delay_counter < transition_delay:
             print('im in transition delay')
             transition_delay_counter += 1
         else:
             transition_delay_counter = 0
             
-            shouldDelayTransition = False
+            delay_with_no_temp_change = False
     else:
+        
+        if last_state!=switchState:
+            delay_with_temp_change = True
         last_state = switchState
         if switchState:
-            if delay_counter < heating_delay:
-                current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
-                if(delay_counter == heating_delay-1):
-                    shouldDelayTransition = True
+            if delay_with_temp_change:
+                if delay_counter < heating_delay:
+                    current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
+                    if(delay_counter == heating_delay-1):
+                        delay_with_no_temp_change = True
+                    else:
+                        delay_with_no_temp_change = False
+                    delay_counter += 1
                 else:
-                    shouldDelayTransition = False
-                delay_counter += 1
+                    delay_with_temp_change = False
+                    delay_counter = 0
             else:
                 delay_counter = 0
                 current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
         else:
-            if delay_counter < cooling_delay:
-                current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
-                if(delay_counter == cooling_delay-1):
-                    shouldDelayTransition = True
+            if delay_with_temp_change:
+                if delay_counter < cooling_delay:
+                    current_temp = update_temperature(current_temp, heating_rate, time_interval, 1)
+                    if(delay_counter == cooling_delay-1):
+                        delay_with_no_temp_change = True
+                    else:
+                        delay_with_no_temp_change = False
+                    delay_counter += 1
                 else:
-                    shouldDelayTransition = False
-                delay_counter += 1
+                    delay_with_temp_change = False
+                    delay_counter = 0
             else:
                 delay_counter = 0
                 current_temp = update_temperature(current_temp, cooling_rate, time_interval, -1)
