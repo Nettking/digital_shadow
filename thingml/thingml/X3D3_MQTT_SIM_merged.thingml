@@ -1,0 +1,894 @@
+thing MQTTDriver includes TemperatureMsg , LuminanceMsg , OnOffMsg , GeneralMsg , MotionMsg {
+	required port provide_temp {
+		sends temperature
+	}
+	required port provide_lum_motion {
+		sends luminance sends motion sends nomotion
+	}
+	provided port require_val {
+		receives add_thermometer receives add_lightsensor receives add_device receives SwitchOn receives SwitchOff
+	}
+	provided port MQTT {
+		sends SwitchOn sends SwitchOff receives temperature receives luminance
+	}
+	property thermometers : Integer [ 25 ]
+	property thermotext : String [ 25 ]
+	property thermoval : Double [ 25 ]
+	property lightsensors : Integer [ 25 ]
+	property lightval : Double [ 25 ]
+	property motionsensors : Integer [ 25 ]
+	property last_mo : Integer = 0
+	property last_light : Integer = 0
+	property last_thermo : Integer = 0
+	property foundL : Boolean
+	property i : Integer
+	property id_s : Integer
+	property found : Boolean
+	property onoffswitches : Integer [ 25 ]
+	property last_onoff : Integer = 0
+	property did : Integer
+	statechart behaviorMQTTDriver init Idle {
+		state Idle {
+			transition -> Idle
+			event put_t : MQTT?temperature
+			action do
+				id_s = put_t.id
+				i = 0
+				found = false
+				while (i < last_thermo and (not found)) do
+					if (id_s == thermometers [i]) do
+						found = true
+					end
+					i = i + 1
+				end
+				if (found) do
+					thermoval[i - 1] = put_t.t
+					provide_temp!temperature(id_s, thermotext [i], put_t.t)
+				end
+			end
+			transition -> Idle
+			event addt : require_val?add_thermometer
+			action do
+				id_s = addt.id
+				thermometers[last_thermo] = id_s
+				thermotext[last_thermo] = addt.txt
+				thermoval[last_thermo] = 20
+				last_thermo = last_thermo + 1
+			end
+			transition -> Idle
+			event addlum : require_val?add_lightsensor
+			action do
+				id_s = addlum.id
+				lightsensors[last_light] = id_s
+				lightval[last_light] = 50
+				last_light = last_light + 1
+			end
+			transition -> Idle
+			event put_lum : MQTT?luminance
+			action do
+				id_s = put_lum.id
+				i = 0
+				foundL = false
+				while (i < last_light and (not foundL)) do
+					if (id_s == lightsensors [i]) do
+						foundL = true
+					end
+					i = i + 1
+				end
+				if (foundL) do
+					lightval[i - 1] = put_lum.lum
+					provide_lum_motion!luminance(id_s, put_lum.lum)
+				end
+			end
+			transition -> Idle
+			event add_dev : require_val?add_device
+			action do
+				did = add_dev.did
+				onoffswitches[last_onoff] = did
+				last_onoff = last_onoff + 1
+			end
+			transition -> Idle
+			event swon : require_val?SwitchOn
+			action do
+				did = swon.did
+				i = 0
+				found = false
+				while (i < last_onoff and (not found)) do
+					if (did == onoffswitches [i]) do
+						found = true
+					end
+					i = i + 1
+				end
+				if (found) do
+					MQTT!SwitchOn(did)
+				end
+			end
+			transition -> Idle
+			event swoff : require_val?SwitchOff
+			action do
+				did = swoff.did
+				i = 0
+				found = false
+				while (i < last_onoff and (not found)) do
+					if (did == onoffswitches [i]) do
+						found = true
+					end
+					i = i + 1
+				end
+				if (found) do
+					MQTT!SwitchOff(did)
+				end
+			end
+		}
+	}
+}
+thing PIM includes GeneralMsg , TemperatureMsg , OnOffMsg , TimerMsgs , LuminanceMsg {
+	provided port get_sensor {
+		receives temperature
+	}
+	required port request_sensor {
+		sends add_thermometer
+	}
+	required port request_actuator {
+		sends add_device sends SwitchOn sends SwitchOff
+	}
+	provided port human_input {
+		receives SwitchOn receives SwitchOff receives set_temperature receives set_delta receives fetch_temp
+	}
+	required port human_output {
+		sends temperature sends prompt
+	}
+	required port guard_temperature {
+		sends timer_start sends timer_cancel receives timer_timeout
+	}
+	required port guard_human {
+		sends timer_start sends timer_cancel receives timer_timeout
+	}
+	property tmrature : Double = 20
+	property thermo_id : Integer = 1
+	property switch_id : Integer = 1
+	property delta : Double = 0.1
+	property lasttemp : Double = 0
+	statechart PIM_behavior init Build {
+		on entry do
+			print ("Running The Room X3D3.MQTT.sim\n")
+		end
+		composite state Build init SetThermostat keeps history {
+			on entry guard_human!timer_start(30000)
+			on exit guard_human!timer_cancel()
+			state SetThermostat {
+				on entry do
+					request_sensor!add_thermometer(thermo_id, "t")
+					request_actuator!add_device(switch_id)
+				end
+				transition -> SetThermostat
+				event human_input?SwitchOn
+				action do
+					human_output!prompt("Please set temperature for Thermostat")
+				end
+				transition -> SetThermostat
+				event human_input?SwitchOff
+				action do
+					human_output!prompt("Please set temperature for Thermostat")
+				end
+			}
+			internal
+			event givedelta : human_input?set_delta
+			action do
+				delta = givedelta.dlta
+			end
+			internal
+			event fetch : human_input?fetch_temp
+			action do
+				human_output!temperature(thermo_id, "temperature ", lasttemp)
+			end
+			internal
+			event temp : get_sensor?temperature
+			action do
+				lasttemp = temp.t
+			end
+			transition -> Running
+			event set_temp : human_input?set_temperature
+			action do
+				tmrature = set_temp.t
+				human_output!prompt("Now entering thermostat. Please give temperature observations")
+			end
+			transition -> Build
+			event tmout : guard_human?timer_timeout
+			action do
+				human_output!prompt("Please continue doing the build of the temperature control")
+			end
+		}
+		composite state Running init Thermostat keeps history {
+			composite state Thermostat init TemprDecide {
+				state TemprDecide {
+					transition -> TemprDecrease guard lasttemp >= tmrature - delta
+					action do
+						request_actuator!SwitchOff(switch_id)
+					end
+					transition -> TemprIncrease guard lasttemp < tmrature - delta
+					action do
+						request_actuator!SwitchOn(switch_id)
+					end
+				}
+				state TemprIncrease {
+					on entry guard_temperature!timer_start(65000)
+					on exit guard_temperature!timer_cancel()
+					transition -> TemprIncrease
+					event temp : get_sensor?temperature
+					guard temp.t <= tmrature + delta
+					action do
+						if (lasttemp > temp.t) request_actuator!SwitchOn(switch_id)
+						lasttemp = temp.t
+					end
+					transition -> TemprDecrease
+					event temp2 : get_sensor?temperature
+					guard temp2.t > tmrature + delta
+					action do
+						request_actuator!SwitchOff(switch_id)
+						lasttemp = temp2.t
+					end
+					transition -> TemprIncrease
+					event timout : guard_temperature?timer_timeout
+					action do
+						human_output!prompt("WARNING: @TemprIncrease - temperature measurement is delayed")
+					end
+					transition -> TemprIncrease
+					event givedelta : human_input?set_delta
+					action do
+						delta = givedelta.dlta
+					end
+					transition -> TemprIncrease
+					event fetch : human_input?fetch_temp
+					action do
+						human_output!temperature(thermo_id, "temperature ", lasttemp)
+					end
+				}
+				state TemprDecrease {
+					on entry guard_temperature!timer_start(65000)
+					on exit guard_temperature!timer_cancel()
+					transition -> TemprDecrease
+					event temp : get_sensor?temperature
+					guard temp.t >= tmrature - delta
+					action do
+						if (lasttemp < temp.t) request_actuator!SwitchOff(switch_id)
+						lasttemp = temp.t
+					end
+					transition -> TemprIncrease
+					event temp2 : get_sensor?temperature
+					guard temp2.t < tmrature - delta
+					action do
+						request_actuator!SwitchOn(switch_id)
+						lasttemp = temp2.t
+					end
+					transition -> TemprDecrease
+					event timout : guard_temperature?timer_timeout
+					action do
+						human_output!prompt("WARNING: @TemprDecrease - temperature measurement is delayed")
+					end
+					transition -> TemprIncrease
+					event givedelta : human_input?set_delta
+					action do
+						delta = givedelta.dlta
+					end
+					transition -> TemprIncrease
+					event fetch : human_input?fetch_temp
+					action do
+						human_output!temperature(thermo_id, "temperature ", lasttemp)
+					end
+				}
+				transition -> On
+				event swon : human_input?SwitchOn
+				action do
+					request_actuator!SwitchOn(swon.did)
+				end
+				transition -> Off
+				event swoff : human_input?SwitchOff
+				action do
+					request_actuator!SwitchOff(swoff.did)
+				end
+				transition -> Thermostat
+				event set_temp : human_input?set_temperature
+				action do
+					tmrature = set_temp.t
+					println ("Changing temp to: ")
+					println (tmrature)
+				end
+			}
+			state On {
+				transition -> Off
+				event swoff : human_input?SwitchOff
+				action do
+					request_actuator!SwitchOff(swoff.did)
+				end
+				transition -> On
+				event swon : human_input?SwitchOn
+				action do
+					request_actuator!SwitchOn(swon.did)
+				end
+				transition -> Thermostat
+				event set_temp : human_input?set_temperature
+				action do
+					tmrature = set_temp.t
+				end
+				transition -> On
+				event temp : get_sensor?temperature
+				action do
+					if (lasttemp > temp.t) request_actuator!SwitchOn(switch_id)
+					lasttemp = temp.t
+				end
+			}
+			state Off {
+				transition -> Off
+				event swoff : human_input?SwitchOff
+				action do
+					request_actuator!SwitchOff(swoff.did)
+				end
+				transition -> On
+				event swon : human_input?SwitchOn
+				action do
+					request_actuator!SwitchOn(swon.did)
+				end
+				transition -> Thermostat
+				event set_temp : human_input?set_temperature
+				action do
+					tmrature = set_temp.t
+				end
+				transition -> Off
+				event temp : get_sensor?temperature
+				action do
+					if (lasttemp < temp.t) request_actuator!SwitchOff(switch_id)
+					lasttemp = temp.t
+				end
+			}
+			internal
+			event fetch : human_input?fetch_temp
+			action do
+				human_output!temperature(thermo_id, "temperature ", lasttemp)
+			end
+			transition -> Running
+			event givedelta : human_input?set_delta
+			action do
+				delta = givedelta.dlta
+			end
+			transition -> Running
+			event human_input?SwitchOn
+			action do
+				human_output!prompt("INTERNAL ERROR: Impossible SwitchOn at PIM.Running")
+			end
+			transition -> Running
+			event human_input?SwitchOff
+			action do
+				human_output!prompt("INTERNAL ERROR: Impossible SwitchOff at PIM.Running")
+			end
+			transition -> Running
+			event human_input?set_temperature
+			action do
+				human_output!prompt("INTERNAL ERROR: Impossible set_temperature at PIM.Running")
+			end
+			transition -> Running
+			event temp : get_sensor?temperature
+			action do
+				human_output!prompt("INTERNAL ERROR: temperature received at PIM.Running")
+				lasttemp = temp.t
+			end
+		}
+	}
+}
+thing Human includes TemperatureMsg , GeneralMsg , OnOffMsg , LuminanceMsg , TimeStuff , DeviceGeneral , MotionMsg {
+	required port send_cmd_temp {
+		sends SwitchOn sends SwitchOff sends set_temperature sends set_delta sends fetch_temp
+	}
+	required port send_cmd_lum_mot {
+		sends add_lightsensor sends add_motionsensor
+	}
+	required port send_temp {
+		sends set_temperature
+	}
+	required port send_day_night_time {
+		sends set_day_start sends set_night_start
+	}
+	provided port TTYin_temp {
+		receives SwitchOn receives SwitchOff receives set_temperature receives set_delta receives fetch_temp
+	}
+	provided port TTYin_lum_mot {
+		receives add_lightsensor receives add_motionsensor
+	}
+	required port get_values {
+		sends temperature sends luminance sends motion sends nomotion sends prompt
+	}
+	provided port TTYout {
+		receives temperature receives luminance receives motion receives nomotion receives prompt
+	}
+	statechart HumanBehavior init Idle {
+		state Idle {
+			transition -> Idle
+			event am : TTYin_lum_mot?add_motionsensor
+			action send_cmd_lum_mot!add_motionsensor(am.id)
+			transition -> Idle
+			event al : TTYin_lum_mot?add_lightsensor
+			action send_cmd_lum_mot!add_lightsensor(al.id)
+			transition -> Idle
+			event son : TTYin_temp?SwitchOn
+			action send_cmd_temp!SwitchOn(son.did)
+			transition -> Idle
+			event sof : TTYin_temp?SwitchOff
+			action send_cmd_temp!SwitchOff(sof.did)
+			transition -> Idle
+			event st : TTYin_temp?set_temperature
+			action send_cmd_temp!set_temperature(st.t)
+			transition -> Idle
+			event sd : TTYin_temp?set_delta
+			action send_cmd_temp!set_delta(sd.dlta)
+			transition -> Idle
+			event st : TTYin_temp?fetch_temp
+			action send_cmd_temp!fetch_temp()
+			transition -> Idle
+			event tp : TTYout?temperature
+			action do
+				get_values!temperature(tp.id, tp.txt, tp.t)
+			end
+			transition -> Idle
+			event lu : TTYout?luminance
+			action do
+				get_values!luminance(lu.id, lu.lum)
+			end
+			transition -> Idle
+			event mot : TTYout?motion
+			action do
+				get_values!motion(mot.id)
+			end
+			transition -> Idle
+			event nomot : TTYout?nomotion
+			action do
+				get_values!nomotion(nomot.id)
+			end
+			transition -> Idle
+			event prm : TTYout?prompt
+			action do
+				println prm.txt
+			end
+		}
+	}
+}
+thing EnergySaving includes LuminanceMsg , TemperatureMsg , TimeStuff , TimerMsgs {
+	provided port get_luminance {
+		receives luminance
+	}
+	provided port human_input_temp {
+		receives set_temperature
+	}
+	provided port get_day_night_time {
+		receives set_day_start receives set_night_start
+	}
+	required port send_comfort_temp {
+		sends set_temperature
+	}
+	required port energy_timer {
+		sends timer_start sends timer_cancel receives timer_timeout
+	}
+	required port request_luminance_sensor {
+		sends add_lightsensor
+	}
+	property current_comfort_temp : Double = 20.6
+	property current_luminance : Double = 0
+	property light_threshold : Double = 20
+	property light_off_temp_fall : Double = 2
+	property night_temp_fall : Double = 8
+	statechart EnergySaving init Normal {
+		on entry do
+			request_luminance_sensor!add_lightsensor(1)
+		end
+		state Normal {
+			on entry do
+				println (" I am in normal state ")
+				send_comfort_temp!set_temperature(current_comfort_temp)
+			end
+			transition -> Normal
+			event temp_input : human_input_temp?set_temperature
+			action do
+				current_comfort_temp = temp_input.t
+				send_comfort_temp!set_temperature(current_comfort_temp)
+			end
+			transition -> LightOff
+			event lum_input : get_luminance?luminance
+			guard lum_input.lum < light_threshold and (Night(Now())== false)
+			action do
+				current_luminance = lum_input.lum
+				send_comfort_temp!set_temperature(current_comfort_temp - light_off_temp_fall)
+			end
+			transition -> Night
+			event lum_input : get_luminance?luminance
+			guard lum_input.lum < light_threshold and (Night(Now())== true)
+			action do
+				current_luminance = lum_input.lum
+				send_comfort_temp!set_temperature(current_comfort_temp - night_temp_fall)
+			end
+			transition -> LightOff
+			event night_start_input : get_day_night_time?set_night_start
+			guard current_luminance < light_threshold and (UpdateNightStart(Now(), night_start_input.time)== false)
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - light_off_temp_fall)
+			end
+			transition -> Night
+			event night_start_input : get_day_night_time?set_night_start
+			guard current_luminance < light_threshold and (UpdateNightStart(Now(), night_start_input.time)== true)
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - night_temp_fall)
+			end
+			transition -> Normal
+			event time_input : get_day_night_time?set_day_start
+			guard current_luminance >= light_threshold
+			action do
+				night_end = time_input.time
+			end
+			transition -> Normal
+			event time_input : get_day_night_time?set_night_start
+			guard current_luminance >= light_threshold
+			action do
+				night_start = time_input.time
+			end
+		}
+		state LightOff {
+			on entry do
+				println (" I am in LightOff state ")
+				energy_timer!timer_start(LeftOfDay())
+			end
+			on exit energy_timer!timer_cancel()
+			transition -> Night
+			event timout : energy_timer?timer_timeout
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - night_temp_fall)
+			end
+			transition -> Normal
+			event lum_input : get_luminance?luminance
+			guard lum_input.lum >= light_threshold
+			action do
+				current_luminance = lum_input.lum
+				send_comfort_temp!set_temperature(current_comfort_temp)
+			end
+			transition -> LightOff
+			event temp_input : human_input_temp?set_temperature
+			action do
+				send_comfort_temp!set_temperature(temp_input.t - light_off_temp_fall)
+			end
+			transition -> Night
+			event night_start_input : get_day_night_time?set_night_start
+			guard (UpdateNightStart(Now(), night_start_input.time)== true) and current_luminance < light_threshold
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - night_temp_fall)
+			end
+			transition -> Night
+			event night_end_input : get_day_night_time?set_day_start
+			guard current_luminance < light_threshold and (UpdateNightEnd(Now(), night_end_input.time)== true)
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - light_off_temp_fall)
+			end
+			transition -> LightOff
+			event night_start_input : get_day_night_time?set_night_start
+			guard current_luminance < light_threshold and (UpdateNightStart(Now(), night_start_input.time)== false)
+			transition -> LightOff
+			event night_end_input : get_day_night_time?set_day_start
+			guard current_luminance < light_threshold and (UpdateNightEnd(Now(), night_end_input.time)== false)
+		}
+		state Night {
+			on entry do
+				println (" I am in night state ")
+				energy_timer!timer_start(LeftOfNight())
+			end
+			on exit energy_timer!timer_cancel()
+			transition -> LightOff
+			event timout : energy_timer?timer_timeout
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - light_off_temp_fall)
+			end
+			transition -> Normal
+			event lum_input : get_luminance?luminance
+			guard lum_input.lum >= light_threshold
+			action do
+				current_luminance = lum_input.lum
+				send_comfort_temp!set_temperature(current_comfort_temp)
+			end
+			transition -> Night
+			event temp_input : human_input_temp?set_temperature
+			action do
+				current_comfort_temp = temp_input.t - night_temp_fall
+				send_comfort_temp!set_temperature(current_comfort_temp)
+			end
+			transition -> LightOff
+			event night_start_input : get_day_night_time?set_night_start
+			guard current_luminance < light_threshold and (UpdateNightStart(Now(), night_start_input.time)== false)
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - light_off_temp_fall)
+			end
+			transition -> LightOff
+			event night_end_input : get_day_night_time?set_day_start
+			guard current_luminance < light_threshold and (UpdateNightEnd(Now(), night_end_input.time)== false)
+			action do
+				send_comfort_temp!set_temperature(current_comfort_temp - light_off_temp_fall)
+			end
+			transition -> Night
+			event night_start_input : get_day_night_time?set_night_start
+			guard current_luminance < light_threshold and (UpdateNightStart(Now(), night_start_input.time)== true)
+			transition -> Night
+			event night_end_input : get_day_night_time?set_day_start
+			guard current_luminance < light_threshold and (UpdateNightEnd(Now(), night_end_input.time)== true)
+		}
+	}
+}
+object JTimerTask @java_type "java.util.TimerTask"
+object JTimer @java_type "java.util.Timer"
+thing TimerJava includes Timer @pim "Timer" @platform "java" {
+	property timer : JTimer
+	property timer_task : JTimerTask
+	function startTimer(delay : Integer) do
+		timer = `new java.util.Timer()`
+	`java.util.TimerTask temp_task = new java.util.TimerTask(){public void run(){`
+		timer!timer_timeout()
+	`}};`
+		timer_task = `temp_task`
+		`` & timer & `.schedule(` & timer_task & `, ` & delay & `);`
+	end
+	function cancel() do
+		if (not (timer_task == `null`)) do
+			`` & timer_task & `.cancel();`
+			`` & timer & `.purge();`
+		end
+	end
+	statechart SoftTimer init default {
+		state default {
+			internal
+			event m : timer?timer_start
+			guard m.delay > 0
+			action do
+				startTimer(m.delay)
+			end
+			internal cancel
+			event m : timer?timer_cancel
+			action cancel()
+		}
+	}
+}
+thing fragment TimeStuff @java_import "import java.time.LocalTime;" {
+	property night_start : Long = 23 * 60 * 60 * 1000
+	property night_end : Long = 7 * 60 * 60 * 1000
+	function Now() : Long do
+		var timeval : Long
+		timeval = `LocalTime.now().toNanoOfDay()/1000000`
+		return timeval
+	end
+	function Timestamp(h : Integer, m : Integer, s : Integer) : Long do
+		return (s + m * 60 + h * 60 * 60) * 1000
+	end
+	function LeftOfDay() : Long do
+		var n : Long = Now()
+		var left : Long = night_start - n
+		if (left < 0) left = left + 24 * 60 * 60 * 1000
+		if (not Night(n)) return left
+		else return 0
+	end
+	function LeftOfNight() : Long do
+		var n : Long = Now()
+		var left : Long = night_end - n
+		if (left < 0) left = left + 24 * 60 * 60 * 1000
+		if (Night(n)) return left
+		else return 0
+	end
+	function Night(x : Long) : Boolean do
+		if (night_end < night_start) do
+			if (night_start <= x or x < night_end) return true
+			else return false
+		end
+		else do
+			if (night_start <= x and x < night_end) return true
+			else return false
+		end
+	end
+	function UpdateNightStart(x : Long, new_night_start : Long) : Boolean do
+		println (" Old night start: ")
+		println (night_start)
+		night_start = new_night_start
+		println (" New night start: ")
+		println (night_start)
+		var isNight : Boolean = Night(x)
+		println (isNight)
+		return isNight
+	end
+	function UpdateNightEnd(x : Long, new_night_end : Long) : Boolean do
+		println (" Old night_end: ")
+		println (night_start)
+		night_end = new_night_end
+		println (" New night_end: ")
+		println (night_start)
+		var isNight : Boolean = Night(x)
+		println (isNight)
+		return isNight
+	end
+}
+datatype Byte<1>
+	@type_checker "Integer"
+	@c_type "uint8_t"
+	@java_type "byte"
+	@js_type "byte"
+	@go_type "byte"
+datatype Char<1>
+	@type_checker "Integer"
+	@c_type "char"
+	@java_type "byte"
+	@js_type "byte"
+	@go_type "byte"
+datatype Boolean<1>
+	@type_checker "Boolean"
+	@c_type "bool"
+	@java_type "boolean"
+	@js_type "boolean"
+	@go_type "bool"
+datatype UInt8<1>
+	@type_checker "Integer"
+	@c_type "uint8_t"
+	@java_type "int"
+	@js_type "short"
+	@go_type "uint8"
+datatype Int8<1>
+	@type_checker "Integer"
+	@c_type "int8_t"
+	@java_type "int"
+	@js_type "short"
+	@go_type "int8"
+datatype UInt16<2>
+	@type_checker "Integer"
+	@c_type "uint16_t"
+	@java_type "int"
+	@js_type "int"
+	@go_type "uint16"
+datatype Int16<2>
+	@type_checker "Integer"
+	@c_type "int16_t"
+	@java_type "int"
+	@js_type "short"
+	@go_type "int16"
+datatype Int32<4>
+	@type_checker "Integer"
+	@c_type "int32_t"
+	@java_type "long"
+	@js_type "int"
+	@go_type "int32"
+datatype UInt32<4>
+	@type_checker "Integer"
+	@c_type "uint32_t"
+	@java_type "long"
+	@js_type "long"
+	@go_type "uint32"
+datatype Long<4>
+	@type_checker "Integer"
+	@c_type "uint32_t"
+	@java_type "long"
+	@js_type "long"
+	@go_type "uint32"
+datatype Int64<8>
+	@type_checker "Integer"
+	@c_type "int64_t"
+	@java_type "long"
+	@js_type "long"
+	@go_type "int64"
+datatype UInt64<8>
+	@type_checker "Integer"
+	@c_type "uint64_t"
+	@java_type "long"
+	@js_type "long"
+	@go_type "uint64"
+datatype Integer<2>
+	@type_checker "Integer"
+	@c_type "int16_t"
+	@java_type "int"
+	@js_type "short"
+	@go_type "int16"
+datatype Float<4>
+	@type_checker "Real"
+	@c_type "float"
+	@java_type "float"
+	@js_type "float"
+	@go_type "float32"
+datatype Double<8>
+	@type_checker "Real"
+	@c_type "double"
+	@java_type "double"
+	@js_type "double"
+	@go_type "float64"
+object String
+	@serializable
+	@c_type "char *"
+	@arduino_type "String"
+	@java_type "String"
+	@js_type "String"
+	@go_type "string"
+enumeration DigitalState as UInt8 {
+	LOW = 0
+	HIGH = 1
+}
+thing fragment GeneralMsg {
+	message prompt(txt : String)
+	message sensorinfo(model : String, proto : String, sid : Integer, dataTypes : Integer, temperature : Double, humidity : Long, timeStamp : Long)
+	message deviceinfo(did : Integer, name : String, model : String, proto : String, ttype : String, meth : Integer, lastCmd : String, lastValue : Long)
+}
+thing fragment TemperatureMsg {
+	message temperature(id : Integer, txt : String, t : Double)
+	message add_thermometer(id : Integer, txt : String)
+	message set_temperature(t : Double)
+	message set_delta(dlta : Double)
+	message fetch_temp()
+}
+thing fragment LuminanceMsg {
+	message luminance(id : Integer, lum : Double)
+	message add_lightsensor(id : Integer)
+	message set_luminance(lum : Double)
+	message set_day_start(time : Integer)
+	message set_night_start(time : Integer)
+}
+thing fragment MotionMsg {
+	message motion(id : Integer)
+	message nomotion(id : Integer)
+	message add_motionsensor(id : Integer)
+}
+thing fragment DeviceGeneral {
+	message add_device(did : Integer)
+}
+thing fragment OnOffMsg includes DeviceGeneral {
+	message SwitchOn(did : Integer)
+	message SwitchOff(did : Integer)
+}
+thing fragment TimerMsgs {
+	message timer_start(delay : Integer)
+	message timer_cancel()
+	@debug "false"
+	message timer_timeout()
+}
+thing fragment Timer includes TimerMsgs {
+	provided port timer {
+		sends timer_timeout receives timer_start receives timer_cancel
+	}
+}
+thing fragment TimerClient includes TimerMsgs {
+	required port timer {
+		sends timer_start sends timer_cancel receives timer_timeout
+	}
+}
+thing TimerClientMock includes TimerClient @mock "true" {
+}
+protocol MQTT
+	@serializer "JSON"
+	@mqtt_broker_address "localhost"
+	@mqtt_broker_port "1883"
+	@mqtt_publish_topic "CPS2021/SwitchControl"
+	@mqtt_subscribe_topic "CPS2021/tempoutput"
+
+protocol stdio @serializer "JSON"
+
+configuration X3D3_MQTT_SIM {
+	instance T1 : MQTTDriver
+	instance pim : PIM
+	instance myself : Human
+	instance g_temp : TimerJava
+	instance g_humn : TimerJava
+	instance e_timer : TimerJava
+	instance e_saving : EnergySaving
+	connector T1.provide_temp => pim . get_sensor
+	connector T1.provide_lum_motion => e_saving . get_luminance
+	connector T1.provide_lum_motion => myself . TTYout
+	connector myself.send_cmd_temp => pim . human_input
+	connector myself.send_cmd_lum_mot => T1 . require_val
+	connector myself.send_temp => e_saving . human_input_temp
+	connector myself.send_day_night_time => e_saving . get_day_night_time
+	connector pim.request_sensor => T1 . require_val
+	connector pim.request_actuator => T1 . require_val
+	connector pim.human_output => myself . TTYout
+	connector pim.guard_temperature => g_temp . timer
+	connector pim.guard_human => g_humn . timer
+	connector e_saving.send_comfort_temp => pim . human_input
+	connector e_saving.energy_timer => e_timer . timer
+	connector e_saving.request_luminance_sensor => T1 . require_val
+	connector myself.get_values over stdio
+	connector myself.TTYin_temp over stdio
+	connector myself.TTYin_lum_mot over stdio
+	connector T1.MQTT over MQTT
+}
