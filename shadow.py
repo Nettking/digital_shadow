@@ -54,7 +54,7 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQT
 
     return client
 
-client = establish_connection(host, port, topic_switch, topic_temp, topic_temp)
+client = establish_connection(host, port, topic_switch, topic_temp)
 
 def update_temperature(current_temp, rate, time_interval, direction):
     return current_temp + direction * rate * time_interval
