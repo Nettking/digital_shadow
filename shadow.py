@@ -10,11 +10,11 @@ import matplotlib
 
 matplotlib.use('TkAgg') # or any other backend that supports showing figures
 
-
-host = '10.0.0.77'
+print("Starting Martin & Benjy's digital shadow of Oysteins Room!")
+host = input("Please enter host (openhabian) IP: ")
 topic_temp = 'CPS2021/tempoutput'
 topic_switch = 'CPS2021/SwitchControl'
-port = 1883
+port = input("Please enter host port (should be 1883): ")
 data = pd.read_csv('output_data.csv')
 data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d %H:%M:%S:%f')
 temp_list = []

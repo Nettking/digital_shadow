@@ -7,8 +7,9 @@ sudo apt-get install python3-tk
 ```
 Install requirements: <\br>
 ```sh
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
+
 <strong>This code may be separated into the following sections:</strong>
 <ul>
  	<li>Importing necessary library files</li>
