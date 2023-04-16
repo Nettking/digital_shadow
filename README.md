@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 
 ### Tools
-<strong>clean.py</strong>
+#### clean.py
 The clean.py script is not part of the digital_shadow, but it was used to prepare the data for further processing.
 
 Here is a brief description of its functionality:
@@ -58,7 +58,7 @@ Here's a step-by-step explanation of the script:
 </ol>
 This script is helpful when you need to clean up CSV files by removing unnecessary or unwanted columns before processing the data further.
 
-<strong>MQTT.py</strong>
+#### MQTT.py
 
 MQTT.py is a Python script that utilizes the Paho MQTT library to establish a connection to an MQTT broker, subscribe to a topic, and publish messages. It also contains a callback function to handle incoming messages.
 
@@ -87,7 +87,7 @@ Here's a detailed explanation of the script:
 </ol>
 The MQTT.py script can be used as a module in other Python applications that require MQTT functionality for communication with IoT devices, sensors, or other MQTT-enabled systems.
 
-<strong>predict_lstm.py</strong>
+#### predict_lstm.py 
 
 The predict_lstm.py script uses an LSTM (Long Short-Term Memory) neural network model to predict temperature values based on historical data. The script reads temperature data from a CSV file, preprocesses and splits the data, trains an LSTM model, and then predicts the temperature values for a test dataset. It writes the predicted values to an output CSV file and visualizes the results using a plot.
 
