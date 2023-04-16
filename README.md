@@ -2,8 +2,9 @@
 A virtual representation (simple digital shadow) of Øystein's room. The primary purpose of this digital shadow is to simulate and temperature change over time.
 
 ## Installation
+This section outlines the installation process for the program. We recommend using the Windows Subsystem for Linux (WSL) on a Windows operating system to set up the required environment. The program relies on Tkinter for its graphical user interface (GUI). Follow these steps to install all necessary packages:
 ### WSL
-This program has been developed using the Windows Subsystem for Linux (WSL) on a Windows operating system. WSL is a compatibility layer that enables users to run Linux binary executables natively on Windows. Learn more: https://learn.microsoft.com/en-us/windows/wsl/install
+This program has been developed using the Windows Subsystem for Linux (WSL) on a Windows operating system. WSL is a compatibility layer that enables users to run Linux binary executables natively on Windows. Set up WSL on your Windows system by following the official Microsoft documentation: https://learn.microsoft.com/en-us/windows/wsl/install
 
 ### Tkinter GUI
 This repo is using Tkinter is a built-in GUI module for Python. It allows you to create desktop applications with graphical user interfaces. 
@@ -23,7 +24,7 @@ python3 shadow.py
 ```
 
 
-
+## Overview
 <strong>This code may be separated into the following sections:</strong>
 <ul>
  	<li>Importing necessary library files</li>
