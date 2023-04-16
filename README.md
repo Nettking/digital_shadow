@@ -1,5 +1,5 @@
 # digital_shadow
-A virtual representation (simple digital shadow) of Øystein's room. The primary purpose of this digital shadow is to simulate and temperature change over time. This program relies on feedback from the Openhabian system which we have set up in a seperate repo.
+A virtual representation (simple digital shadow) of Øystein's room. The primary purpose of this digital shadow is to simulate temperature change over time. This program relies on feedback from the Openhabian system which we have set up in a seperate repo.
 
 ## Installation
 This section outlines the installation process for the program. We recommend using the Windows Subsystem for Linux (WSL) on a Windows operating system to set up the required environment. The program relies on Tkinter for its graphical user interface (GUI). Follow these steps to install all necessary packages:
