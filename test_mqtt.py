@@ -1,4 +1,12 @@
 import paho.mqtt.client as mqtt
+import subprocess
+
+def is_paho_installed():
+    installed_packages = subprocess.check_output(["pip", "list"]).decode("utf-8")
+    return 'paho-mqtt' in installed_packages
+
+def install_paho():
+    subprocess.check_call(["pip", "install", "paho-mqtt"])
 
 def on_message(client, userdata, message):
     # Decode the message payload from bytes to string
@@ -31,14 +39,23 @@ def establish_connection(MQTT_BROKER_ADDR, MQTT_BROKER_PORT, MQTT_TOPIC_SUB, MQT
 
     return client
 
-host = input("Please enter host (openhabian) IP: ")
-port = 1883
-test_temp = input("Please enter the temperature to send: ")
-topic_temp = 'CPS2021/tempoutput'
-topic_switch = 'CPS2021/SwitchControl'
 
-message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{test_temp}}}}}'
+if __name__ == "__main__":
+    if not is_paho_installed():
+        print("paho-mqtt is not installed. Installing now...")
+        install_paho()
+        print("Installation completed.")
+    else:
+        print("paho-mqtt is already installed.")
+        
+    host = input("Please enter host (openhabian) IP: ")
+    port = 1883
+    test_temp = input("Please enter the temperature to send: ")
+    topic_temp = 'CPS2021/tempoutput'
+    topic_switch = 'CPS2021/SwitchControl'
+
+    message = f'{{"temperature":{{"id":1,"txt":"temperature","t":{test_temp}}}}}'
 
 
-# Function to establish a connection to the MQTT broker
-client = establish_connection(host, port, topic_switch, topic_temp, message)
+    # Function to establish a connection to the MQTT broker
+    client = establish_connection(host, port, topic_switch, topic_temp, message)
