@@ -9,13 +9,14 @@ except:
 
     def install_paho():
         subprocess.check_call(["pip", "install", "paho-mqtt"])
-        
+
     if not is_paho_installed():
         print("paho-mqtt is not installed. Installing now...")
         install_paho()
         print("Installation completed.")
     else:
         print("paho-mqtt is already installed.")
+    import paho.mqtt.client as mqtt
 
 def on_message(client, userdata, message):
     # Decode the message payload from bytes to string
